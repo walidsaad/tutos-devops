@@ -17,3 +17,4 @@ $ cd apache-tomcat-9.0.36/bin/
 $ chmod a+x startup.sh 
  $ chmod a+x catalina.sh 
  $ ./startup.sh 
+$ yum install java-11-openjdk.x86_64
