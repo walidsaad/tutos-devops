@@ -47,3 +47,7 @@ Started Sonatype Nexus OSS 3.24.0-02
 https://www.postgresql.org/download/linux/redhat/
 -SonarQube
 https://docs.sonarqube.org/latest/setup/install-server/
+$ cat conf/sonar.properties
+sonar.jdbc.username=postgres sonar.jdbc.password=admin
+sonar.jdbc.url=jdbc:postgresql://localhost/sonarqube
+sonar.web.javaOpts=-Xmx768m -Xms128m -XX:+HeapDumpOnOutOfMemoryError
