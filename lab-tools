@@ -1,11 +1,12 @@
-Maven : https://downloads.apache.org/maven/maven-3/3.6.3/binaries/apache-maven-3.6.3-bin.zip
-Java 11 : https://files.slack.com/files-pri/TEC5X6R1U-FQ35GLS0Z/download/jdk-11.0.5_windows-x64_bin.exe
-Jenkins :http://mirrors.jenkins.io/war-stable/latest/jenkins.war
-Gitbash : https://git-scm.com/download/win
-Tomcat :https://downloads.apache.org/tomcat/tomcat-9/v9.0.36/bin/apache-tomcat-9.0.36-windows-x64.zip
+
 --For centos--
+1-Java, Maven, Tomcat and Jenkins
 $ mkdir tools
 $ cd tools
+$ sudo yum search java-11
+$ sudo yum install  ava-11-openjdk.x86_64 java-11-openjdk-devel.x86_64
+$ export JAVA_HOME=/usr/lib/jvm/java-11-openjdk
+$ export PATH=$PATH:$JAVA_HOME
 $ wget http://mirrors.jenkins.io/war-stable/latest/jenkins.war
 $ wget https://downloads.apache.org/maven/maven-3/3.6.3/binaries/apache-maven-3.6.3-bin.zip
 $ wget https://downloads.apache.org/tomcat/tomcat-9/v9.0.36/bin/apache-tomcat-9.0.36-windows-x64.zip
@@ -13,11 +14,36 @@ $ unzip apache-maven-3.6.3-bin.zip
 $ cd apache-maven-3.6.3/bin/
 $ ./mvn --help
 $ unzip apache-tomcat-9.0.36-windows-x64.zip 
+$ cp /home/stagiaire/tools/jenkins.war /home/stagiaire/tools/apache-tomcat-9.0.36/webapps/
 $ cd apache-tomcat-9.0.36/bin/
 $ chmod a+x startup.sh 
  $ chmod a+x catalina.sh 
  $ ./startup.sh 
-$ yum install java-11-openjdk.x86_64
+ -->http://localhost:8080/jenkins
+ -->Maven Goals :
 $ git clone https://github.com/walidsaad/training-app-demo.git
-$ export JAVA_HOME=/usr/lib/jvm/java-11-openjdk
-$ export PATH=$PATH:$JAVA_HOME
+$ sudo ln -s /home/stagiaire/tools/apache-maven-3.6.3/bin/mvn /usr/bin/mvn
+$ cd training-app-demo.git
+$ mvn compile
+$ mvn test
+$ mvn package
+
+2-Nexus
+https://help.sonatype.com/repomanager3/download
+cd tools/
+$ mv /home/stagiaire/Téléchargements/nexus-3.24.0-02-unix.tar.gz .
+$ tar -zxvf nexus-3.24.0-02-unix.tar.gz 
+$ cd nexus-3.24.0-02/bin/
+$ ./nexus run
+-------------------------------------------------
+
+Started Sonatype Nexus OSS 3.24.0-02
+
+-------------------------------------------------
+-->http://localhost:8081/
+
+3-SonarQube
+-PostgreSql
+https://www.postgresql.org/download/linux/redhat/
+-SonarQube
+https://docs.sonarqube.org/latest/setup/install-server/
