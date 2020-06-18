@@ -18,3 +18,4 @@ $ chmod a+x startup.sh
  $ chmod a+x catalina.sh 
  $ ./startup.sh 
 $ yum install java-11-openjdk.x86_64
+$ git clone https://github.com/walidsaad/training-app-demo.git
