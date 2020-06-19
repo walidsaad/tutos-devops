@@ -1,0 +1,75 @@
+
+1.Fichier settings.xml
+Pour que Maven consulte le repository Nexus à la place du référentiel central Maven, ajoutez les paramètres de miroir dans le fichier C:\Program Files (x86)\apache-maven-3.5.3\conf\settings.xml comme suit :
+•Spécifier l’url du note miroir Nexus dans la section <mirrors> :
+<mirror>
+<!--This sends everything else to /public -->
+<id>nexus</id>
+<mirrorOf>*</mirrorOf>
+<url>http://localhost:8081/repository/maven-public/</url>
+</mirror>
+•Ajouter un nouveau profile Nexus dans la section <profiles> :
+<profile>
+      <id>nexus</id>
+      <!--Enable snapshots for the built in central repo to direct -->
+      <!--all requests to nexus via the mirror -->
+      <repositories>
+        <repository>
+          <id>central</id>
+          <url>http://central</url>
+          <releases><enabled>true</enabled></releases>
+          <snapshots><enabled>true</enabled></snapshots>
+        </repository>
+      </repositories>
+     <pluginRepositories>
+        <pluginRepository>
+          <id>central</id>
+          <url>http://central</url>
+          <releases><enabled>true</enabled></releases>
+          <snapshots><enabled>true</enabled></snapshots>
+        </pluginRepository>
+      </pluginRepositories>
+    </profile>
+•Activer le profile Nexus en ajoutant la configuration suivante  à la fin du fichier :
+<activeProfiles>
+    <!--make the profile active all the time -->
+    <activeProfile>nexus</activeProfile>
+  </activeProfiles>
+
+
+
+•Une dernière modification sera d’ajouter les paramètres d’authentification auprès du notre serveur Nexus :
+<server>
+          <id>nexus</id>
+          <username>admin</username>
+          <password>admin123</password>
+        </server>
+Une fois Nexus configuré pour être le miroir de tous les référentiels, Maven consulte désormais l'installation locale de Nexus au lieu de se rendre dans le référentiel central de Maven. Si Nexus a l'artefact demandé, l'artefact sera servi à partir de l'installation Nexus locale. Si Nexus ne possède pas l'artefact, Nexus le récupèrera du référentiel distant, puis l'ajoutera au miroir local de ce référentiel distant.
+Lancer la commande mvn clean install et vérifier que Maven va télécharger les artefacts (les dépendances jar et plugins) depuis notre référencie Nexus.
+
+
+2.Fichier pom.xml du projet Maven (publication des releases dans Nexus)
+Dans la partie précédente nous avons utilisé Nexus pour télécharger les artefacts Maven vers notre projet afin de compiler et installer nos sources. Maintenant, nous allons configurer notre projet Maven afin de pousser les artefacts de version (version ou releases) et d'instantané (SNAPSHOT) dans le serveur Nexus.
+•Mettre la version du votre projet à 1.0 (et non pas .0-SNAPSHOT) :
+<groupId>com.mycompany.app</groupId>
+  <artifactId>training-app</artifactId>
+  <packaging>jar</packaging>
+  <version>1.0</version>
+  <name>training-app</name>
+•Les artefacts de version (version ou releases) et d'instantané (SNAPSHOT) doivent être configurés dans le fchier POM du projet comme distributionManagement :
+<distributionManagement>
+  <repository>
+    <id>nexus</id>
+    <name>Releases</name>
+    <url>http://localhost:8081/repository/maven-releases</url>
+  </repository>
+  <snapshotRepository>
+    <id>nexus</id>
+    <name>Snapshot</name>
+    <url>http://localhost:8081/repository/maven-snapshots</url>
+  </snapshotRepository>
+</distributionManagement>
+•Lancer la commande mvn clean deploy et vérifier que Maven a bien uploadé  nos artefacts vers  le serveur Nexus.
+
+3.Fichier pom.xml du projet Maven (publication des snapshots dans Nexus)
+A vous de jouer :)
