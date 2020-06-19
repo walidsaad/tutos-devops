@@ -43,16 +43,7 @@ Started Sonatype Nexus OSS 3.24.0-02
 -->http://localhost:8081/
 
 3-SonarQube
--PostgreSql
-https://www.postgresql.org/download/linux/redhat/
-
-sudo yum install postgresql-server.x86_64
- sudo postgresql-setup initdb
- sudo systemctl enable postgresql.service
- sudo systemctl start postgresql.service
-
-
--SonarQube
+-SonarQube (using h2 database by default, only for default)
 https://docs.sonarqube.org/latest/setup/install-server/
 $ sudo alternatives --config java
 [sudo] Mot de passe de stagiaire : 
@@ -73,8 +64,6 @@ OpenJDK 64-Bit Server VM 18.9 (build 11.0.7+10-LTS, mixed mode, sharing)
 sudo sysctl -w vm.max_map_count=262144
 sudo sysctl -w fs.file-max=65536
 $ cat conf/sonar.properties
-sonar.jdbc.username=postgres sonar.jdbc.password=admin
-sonar.jdbc.url=jdbc:postgresql://localhost/sonarqube
 sonar.web.javaOpts=-Xmx768m -Xms128m -XX:+HeapDumpOnOutOfMemoryError
 
 $ sudo cat /etc/systemd/system/sonarqube.service
@@ -84,7 +73,7 @@ After=syslog.target network.target
 
 [Service]
 Type=simple
-#User=sonarqube
+User=sonarqube
 #Group=sonarqube
 #PermissionsStartOnly=true
 ExecStart=/bin/nohup /usr/bin/java -Xms32m -Xmx32m -Djava.net.preferIPv4Stack=true -jar /home/stagiaire/tools/sonarqube-8.3.1.34397/lib/sonar-application-8.3.1.34397.jar
@@ -98,3 +87,7 @@ SuccessExitStatus=143
 [Install]
 WantedBy=multi-user.target
 
+$ sudo systemctl enable sonarqube.service
+$ sudo systemctl start sonarqube.service
+
+-->http://localhost:9000/
