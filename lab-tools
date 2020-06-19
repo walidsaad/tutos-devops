@@ -77,7 +77,7 @@ After=syslog.target network.target
 
 [Service]
 Type=simple
-User=sonarqube
+User=stagiaire
 #Group=sonarqube
 #PermissionsStartOnly=true
 ExecStart=/bin/nohup /usr/bin/java -Xms32m -Xmx32m -Djava.net.preferIPv4Stack=true -jar /home/stagiaire/tools/sonarqube-8.3.1.34397/lib/sonar-application-8.3.1.34397.jar
