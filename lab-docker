@@ -1,0 +1,1429 @@
+Walid SAAD -  © 2020
+**************************************************************************************************
+		Lab 1 : Docker Installation 
+**************************************************************************************************
+I-For Ubuntu
+
+https://docs.docker.com/install/linux/docker-ce/ubuntu/
+
+II-For Centos :
+
+https://docs.docker.com/install/linux/docker-ce/centos/
+$ sudo yum install -y yum-utils
+
+$ sudo yum-config-manager \
+    --add-repo \
+    https://download.docker.com/linux/centos/docker-ce.repo
+$ sudo yum install docker-ce docker-ce-cli containerd.io
+
+$ sudo systemctl start docker
+
+$ sudo chmod 777 /var/run/docker.sock (if problem)
+
+**************************************************************************************************
+		Lab 2 :  Build and Manage images (DockerFile)
+**************************************************************************************************
+Docker offers two types of images:
+-OS images (ubuntu, debian, etc)
+-Dockerized Services /Apps Images (http, nodejs, mongodb, etc)
+-Docker Registry (Local, or remote like Docker Hub and Docker Store)
+
+Different methods to create Docker image :
+-image pull : charge une archive de fichiers, comme couche
+de base
+-container commit : create new couche (+ image) from current container
+-image build : construction form a Dockerfile (commands list)
+
+1-Working with Docker Images
+
+Search for images available on Docker Hub: 
+$ sudo docker search Ubuntu  download ubuntu image to your computer 
+$ sudo docker pull ubuntu 
+Using default tag: latest 
+latest: Pulling from library/ubuntu 
+473ede7ed136: Pull complete 
+c46b5fa4d940: Pull complete 
+93ae3df89c92: Pull complete 
+6b1eed27cade: Pull complete 
+Digest: sha256:29934af957c53004d7fb6340139880d23fb1952505a15d69a03af0d1418878cb 
+Status: Downloaded newer image for ubuntu:latest 
+$ sudo docker images 
+REPOSITORY          TAG                 IMAGE ID            CREATED             SIZE 
+ubuntu              latest              ea4c82dcd15a        3 weeks ago         85.8MB 
+$ sudo docker pull ubuntu:16.04 
+16.04: Pulling from library/ubuntu 
+18d680d61657: Pull complete 
+0addb6fece63: Pull complete 
+78e58219b215: Pull complete 
+eb6959a66df2: Pull complete 
+Digest: sha256:76702ec53c5e7771ba3f2c4f6152c3796c142af2b3cb1a02fce66c697db24f12 
+Status: Downloaded newer image for ubuntu:16.04 
+$ sudo docker images 
+REPOSITORY          TAG                 IMAGE ID            CREATED             SIZE 
+ubuntu              latest              ea4c82dcd15a        3 weeks ago         85.8MB 
+ubuntu              16.04               4a689991aa24        3 weeks ago         116MB 
+
+$ sudo docker run -it --name docker1 ubuntu:16.04 
+root@695629632bb0:/# CTR + P +Q 
+
+$ sudo docker run -dt --name docker2 ubuntu:16.04 
+b00eea8a30748e92073ec275c85af1e204fd7b34429fba3bd8c7f2896d9cdc08 
+
+$ sudo docker ps 
+CONTAINER ID        IMAGE               COMMAND             CREATED              STATUS              PORTS               NAMES 
+b00eea8a3074        ubuntu:16.04        "/bin/bash"         53 seconds ago       Up 48 seconds                           docker2 
+695629632bb0        ubuntu:16.04        "/bin/bash"         About a minute ago   Up About a minute                       docker1 
+ 
+-d (detach): Run container in background and print container ID 
+-i (interactive): Keep STDIN open even if not attached 
+-t (tty): Allocate a pseudo-TTY  
+Use the following combination of keys instead: CTRL + P + Q. This command allows to leave the container without turning it off. 
+If you use the exit command again within the container, it will shut down. u
+
+2-Build your own image (Web Application)
+
+Create the Dockerfile to build a new image with the web application code source 
+$ echo \ " FROM ubuntu:16.04 
+RUN apt-get update && apt-get install -y  apache2 git vim 
+#Method 1: Download the web application from github repository 
+RUN git clone https://github.com/walidsaad/training-app-front.git /var/www/html/training-app-front 
+#Method 2: Download the web application from HTTP repository 
+#ADD https://lipn.univ-paris13.fr/~saad/training-app.zip /var/www/html/ training-appfront/ 
+#Method 3: Copy the web application form Docker HOST to image (Using ADD Instruction) 
+#Method 4: Copy the web application form Docker HOST to image (Using COPY Instruction) 
+#COPY training-app-front/ /var/www/html/training-app-front/ 
+EXPOSE 22 80 
+ENTRYPOINT [\"/usr/sbin/apache2ctl\", \"-D\", \"FOREGROUND\"] 
+#Or you can combine ENTRYPOINT and CMD Commands as follows 
+#ENTRYPOINT ["/usr/sbin/apache2ctl"] 
+#CMD ["-D", "FOREGROUND"] " >>Dockerfile
+
+-Build image (v1.1) 
+$ sudo docker build -t="myimage:v1.1" . 
+
+-Run container: 
+$ sudo docker rm -f $(sudo docker ps -a -q) 
+$ sudo docker run -dt -p 81:80 --name docker1 myimage:v1.1 
+$ curl http://localhost:81/training-app-front/
+
+**************************************************************************************************
+		Lab 3 : Manage data in Docker (Volumes)
+**************************************************************************************************
+
+Docker has three options for containers to store data in the Docker Host machine :
+
+-Volumes are stored in a part of the host filesystem which is managed by Docker (/var/lib/docker/volumes/ on Linux). 
+Non-Docker processes should not modify this part of the filesystem. Volumes are the best way to persist data in Docker.
+
+-Bind mounts may be stored anywhere on the host system. 
+Non-Docker processes on the Docker host or a Docker container can modify them at any time.
+
+-tmpfs mounts are stored in the host system’s memory only, and are never written to the host system’s filesystem.
+
+Notes : 
+
+-With volumes and bind mounts, the files are persisted even after the container stops (the volume still exists)
+-With tmpfs mounts the data is not persisted.
+
+-Volumes are the preferred way to persist data in Docker containers and services. Some use cases for volumes include:
+
+--> Sharing data among multiple running containers.Multiple containers can mount the same volume simultaneously, 
+either read-write or read-only. Volumes are only removed when you explicitly remove them.
+
+--> When you want to store your container’s data on a remote host or a cloud providers (AWS, Azure, GKE), rather than locally,
+to encrypt the contents of volumes, or to add other functionality.
+
+--> When you need to back up, restore, or migrate data from one Docker host to another, volumes are a better choice. 
+You can stop containers using the volume, then back up the volume’s directory (such as /var/lib/docker/volumes/<volume-name>).
+
+--> You can manage volumes using Docker CLI commands or the Docker API.
+
+
+1-Volumes
+-Create and manage volumes
+$ sudo docker volume create my-vol
+my-vol
+
+$ sudo docker volume ls
+
+DRIVER              VOLUME NAME
+local               my-vol
+$ sudo docker volume inspect my-vol
+[
+    {
+        "CreatedAt": "2018-10-07T19:09:57+01:00",
+        "Driver": "local",
+        "Labels": {},
+        "Mountpoint": "/var/lib/docker/volumes/my-vol/_data",
+        "Name": "my-vol",
+        "Options": {},
+        "Scope": "local"
+    }
+]
+
+
+-Start a container with a volume
+
+For standalone containers: you can use the -v or --volume flag 
+For swarm services : the --mount flag was used (only supported)
+--> With Docker 17.06, you can also use --mount with standalone containers
+--> New users should try --mount syntax which is simpler than --volume syntax (volume driver options)
+
+$ sudo docker run -d --name myapache --mount source=my-vol,target=/app httpd:latest
+$ sudo docker ps
+CONTAINER ID        IMAGE                      COMMAND                  CREATED             STATUS              PORTS                      NAMES
+da5bd56201d4        httpd:latest               "httpd-foreground"       10 seconds ago      Up 8 seconds        80/tcp                     myapache
+$ sudo docker inspect myapache
+"Mounts": [
+            {
+                "Type": "volume",
+                "Name": "my-vol",
+                "Source": "/var/lib/docker/volumes/my-vol/_data",
+                "Destination": "/app",
+                "Driver": "local",
+                "Mode": "z",
+                "RW": true,
+                "Propagation": ""
+            }
+        ],
+
+$ ls /var/lib/docker/volumes/my-vol/_data
+$ sudo docker exec myapache touch /app/file.txt
+$ sudo docker exec myapache ls /app
+file.txt
+$ sudo ls /var/lib/docker/volumes/my-vol/_data
+file.txt
+
+--> We can also share volume between 2 containers
+
+
+
+3-Using volume drivers
+-When building fault-tolerant applications, you might need to configure multiple replicas 
+of the same service to have access to the same files.
+-You can create volumes with a driver that supports writing files to an external storage system like NFS or Amazon S3.
+-Volume drivers allow you to abstract the underlying storage system from the application logic
+(you can update the services to use a different driver without changing the application logic), for ex from NFS to AWS S3.
+
+**************************************************************************************************
+		Lab 4 : Manage Network
+**************************************************************************************************
+Docker Network driver:
+-User-defined bridge networks are best when you need multiple containers to communicate on the same Docker host.
+-Overlay networks are best when you need containers running on different Docker hosts to communicate, 
+or when multiple applications work together using swarm services.
+-Third-party network plugins allow you to integrate Docker with specialized network stacks.
+-Host networks are best when the network stack should not be isolated from the Docker host, 
+but you want other aspects of the container to be isolated.
+-Macvlan networks are best when you are migrating from a VM setup or need your containers
+ to look like physical hosts on your network, each with a unique MAC address.
+
+Note:
+ 
+At the start of the daemon docker:
+-Create the bridge ”docker0” : a private IP/MAC address are assigned to
+bridge + configuration of configure routing tables (route and iptables)
+
+For each container Docker creates two pairs of interfaces (both connected to the bridge and work as a pipe) :
+-one in the container (eth *) another in the host machine (veth *)
+-generation of an IP address and a MAC address for the container
+-default route configuration in the container
+
+$ ifconfig
+docker0   Link encap:Ethernet  HWaddr 02:42:d0:09:1c:af  
+          inet adr:172.17.0.1  Bcast:172.17.255.255  Masque:255.255.0.0
+          adr inet6: fe80::42:d0ff:fe09:1caf/64 Scope:Lien
+          UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+          RX packets:10133 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:15613 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 lg file transmission:0 
+          RX bytes:971248 (948.4 KiB)  TX bytes:18934358 (18.0 MiB)
+veth05d2e96 Link encap:Ethernet  HWaddr 82:61:79:1d:ed:87  
+          adr inet6: fe80::8061:79ff:fe1d:ed87/64 Scope:Lien
+          UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+          RX packets:33300 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:50101 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 lg file transmission:0 
+          RX bytes:6224993 (5.9 MiB)  TX bytes:4238267 (4.0 MiB)
+
+1-Manage the default network driver (bridge)
+
+$ sudo docker network ls
+NETWORK ID          NAME                           DRIVER              SCOPE
+8369f0287a10        bridge                         bridge              local
+1a92673da24c        host                           host                local
+cf432f5cb924        none                           null                local
+$ sudo docker inspect myapache
+
+
+2-Use user-defined bridge networks
+
+$ sudo docker network create --driver bridge my-network
+
+$ sudo docker network ls
+NETWORK ID          NAME                           DRIVER              SCOPE
+8369f0287a10        bridge                         bridge              local
+1a92673da24c        host                           host                local
+f002eb7ba513        my-network                     bridge              local
+cf432f5cb924        none                           null                local
+
+$ sudo docker network inspect my-network
+[
+    {
+        "Name": "my-network",
+        "Id": "f002eb7ba513d84613ef5d190cf35cca96bffc9aba2f5da6f0857195c9f3b9c3",
+        "Created": "2018-10-07T22:54:31.636198276+01:00",
+        "Scope": "local",
+        "Driver": "bridge",
+        "EnableIPv6": false,
+        "IPAM": {
+            "Driver": "default",
+            "Options": {},
+            "Config": [
+                {
+                    "Subnet": "172.19.0.0/16",
+                    "Gateway": "172.19.0.1"
+                }
+            ]
+        },
+        "Internal": false,
+        "Attachable": false,
+        "Ingress": false,
+        "ConfigFrom": {
+            "Network": ""
+        },
+        "ConfigOnly": false,
+        "Containers": {},
+        "Options": {},
+        "Labels": {}
+    }
+]
+$ sudo docker run -d --name myapache4 --network my-network httpd:latest
+$ sudo docker network inspect my-network
+[
+    {
+        "Name": "my-network",
+        "Id": "f002eb7ba513d84613ef5d190cf35cca96bffc9aba2f5da6f0857195c9f3b9c3",
+        "Created": "2018-10-07T22:54:31.636198276+01:00",
+        "Scope": "local",
+        "Driver": "bridge",
+        "EnableIPv6": false,
+        "IPAM": {
+            "Driver": "default",
+            "Options": {},
+            "Config": [
+                {
+                    "Subnet": "172.19.0.0/16",
+                    "Gateway": "172.19.0.1"
+                }
+            ]
+        },
+        "Internal": false,
+        "Attachable": false,
+        "Ingress": false,
+        "ConfigFrom": {
+            "Network": ""
+        },
+        "ConfigOnly": false,
+        "Containers": {
+            "677cf9b68fabd160cdd76c6f6723814a9bcebaf00337795b080b7c1c320755e3": {
+                "Name": "myapache4",
+                "EndpointID": "7b7685f57d0143eae1af40a6e886f02d00e8a2b84af53c777491f7a542b1dfb2",
+                "MacAddress": "02:42:ac:13:00:02",
+                "IPv4Address": "172.19.0.2/16",
+                "IPv6Address": ""
+            }
+        },
+        "Options": {},
+        "Labels": {}
+    }
+]
+
+-Docker DNS Resolution (bridge network %user-defined netwok)
+$ docker rm -f $(docker ps -a -q)
+$ docker run -dt --name docker3 --network my-network busybox
+$ docker run -dt --name docker4 --network my-network busybox
+$ docker run -dt --name docker1 busybox
+$ docker run -dt --name docker2 busybox
+$ docker ps
+$ docker exec docker1 ifconfig
+$ docker exec docker2 ifconfig
+$ docker exec docker1 ping 172.17.0.3
+$ docker exec docker1 ping docker2
+$ docker exec docker3 ping 172.18.0.3
+$ docker exec docker3 ping docker4
+$ docker exec docker3 ping 172.17.0.3
+Note:
+On user-defined networks like my-network, containers can not only communicate by IP address,
+ but can also resolve a container name to an IP address. This capability is called automatic service discovery.
+
+-Disconnect/Connect containers from Network
+$ docker network disconnect my-network docker1 -f
+$ docker network connect bridge docker1
+$ docker exec docker1 ping docker3
+**************************************************************************************************
+        Lab 5 : Docker Hub
+**************************************************************************************************
+1-Docker HUB Account
+ Create a free Docker HUB ID 
+ 
+2-Explore repositories
+Push Images to Docker HUB 
+Log in to Docker HUB using Docker CLI 
+
+$ sudo docker login 
+
+-Login with your Docker ID to push and pull images from Docker Hub. If you don't have a Docker ID, head over to https://hub.docker.com to create one. 
+Username: walidsaad 
+Password: 
+WARNING! Your password will be stored unencrypted in /home/cloud/.docker/config.json. 
+Configure a credential helper to remove this warning. See  
+https://docs.docker.com/engine/reference/commandline/login/#credentials-store 
+ 
+Login Succeede
+
+Push the image to Docker Hub 
+$ sudo docker images 
+REPOSITORY          TAG                 IMAGE ID            CREATED             SIZE 
+app-frontend        v1.0                4c016b54709d        20 hours ago        110MB 
+myimage             v1.2                a887b02ae83d        45 hours ago        350MB 
+myimage             v1.1                442d3c707c47        47 hours ago        350MB 
+myimage             latest              4fdd24f1b727        2 days ago          364MB 
+nginx               latest              62f816a209e6        8 days ago          109MB 
+ubuntu              16.04               4a689991aa24        3 weeks ago         116MB 
+ubuntu              latest              ea4c82dcd15a        3 weeks ago         85.8MB 
+busybox             latest              59788edf1f3e        6 weeks ago         1.15MB 
+$ sudo docker tag app-frontend:v1.0 walidsaad/app-frontend:v1.0 
+$ sudo docker images 
+REPOSITORY               TAG           IMAGE ID            CREATED             SIZE 
+app-frontend             v1.0          4c016b54709d        20 hours ago        110MB 
+walidsaad/app-frontend   v1.0          4c016b54709d        20 hours ago        110MB 
+myimage                  v1.2          a887b02ae83d        45 hours ago        350MB 
+myimage                  v1.1          442d3c707c47        47 hours ago        350MB 
+myimage                  latest        4fdd24f1b727        2 days ago          364MB 
+nginx                    latest        62f816a209e6        8 days ago          109MB 
+ubuntu                   16.04         4a689991aa24        3 weeks ago         116MB 
+ubuntu                   latest        ea4c82dcd15a        3 weeks ago         85.8MB 
+busybox                  latest        59788edf1f3e        6 weeks ago         1.15MB 
+ 
+$ sudo docker push walidsaad/app-frontend:v1.0 
+The push refers to repository [docker.io/walidsaad/app-frontend] 
+f72d3b93774e: Pushed 
+ad9ac0e6043b: Mounted from library/nginx 
+6ccbee34dd10: Mounted from library/nginx 
+237472299760: Mounted from library/mysql 
+v1.0: digest: sha256:1bdf7d1b12f3019b62efec80850ac65350c96cb600d94e57dcb69dddefa19a5e size: 1158
+
+Browse your Docker Hub repository 
+
+**************************************************************************************************
+    Lab 6 : Multi-containers with Docker Compose 
+**************************************************************************************************
+ 
+2.1.	Install Compose on Linux systems
+
+•	Install docker-compose command
+$ sudo apt-get update
+$ sudo curl -L "https://github.com/docker/compose/releases/download/1.23.1/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+$ sudo chmod +x /usr/local/bin/docker-compose
+$ docker-compose –version
+docker-compose version 1.23.1, build b02f1306
+
+For more documentation you can check: https://docs.docker.com/compose/install/#install-compose
+https://docs.docker.com/compose/compose-file/
+https://docs.docker.com/compose/compose-file/compose-versioning/
+
+2.2.	Create Wordpress Application
+
+Let's use Docker Compose to create a local container infrastructure with wordpress CMS.
+$ mkdir my_wordpress
+$ cd my_wordpress
+$ echo \
+"version: '3.3'
+services:
+   db:
+     image: mysql:5.7
+     volumes:
+       - dbdata:/var/lib/mysql
+     restart: always
+     environment:
+       MYSQL_ROOT_PASSWORD: somewordpress
+       MYSQL_DATABASE: wordpress
+       MYSQL_USER: wordpress
+       MYSQL_PASSWORD: wordpress
+   wordpress:
+     depends_on:
+       - db
+     image: wordpress:latest
+     ports:
+       - "8000:80"
+     restart: always
+     environment:
+       WORDPRESS_DB_HOST: db:3306
+       WORDPRESS_DB_USER: wordpress
+       WORDPRESS_DB_PASSWORD: wordpress
+volumes:
+    dbdata:" >>docker-compose.yml
+
+•	Launch Docker Compose 
+
+$ sudo docker-compose up -d
+Creating network "my_wordpress_default" with the default driver
+Creating volume "my_wordpress_dbdata" with default driver
+Creating my_wordpress_db_1_bac364d3fd69 ... done
+Creating my_wordpress_wordpress_1_9d8d9cf49eb0 ... done 
+$ sudo docker ps
+CONTAINER ID        IMAGE                   COMMAND                  CREATED             STATUS              PORTS                            NAMES
+f5d42e6b99ce        wordpress:latest        "docker-entrypoint.s…"   3 minutes ago       Up 2 minutes        0.0.0.0:8000->80/tcp             my_wordpress_wordpress_1_123d43c60f51
+eba510e6cff5        mysql:5.7               "docker-entrypoint.s…"   3 minutes ago       Up 3 minutes        3306/tcp, 33060/tcp              my_wordpress_db_1_2eddb6d561c0 my_wordpress_db_1
+$ sudo docker-compose ps
+Name                               Command               State          Ports
+-----------------------------------------------------------------------------------------------------
+my_wordpress_db_1_2eddb6d561c0          docker-entrypoint.sh mysqld      Up      3306/tcp, 33060/tcp
+my_wordpress_wordpress_1_123d43c60f51   docker-entrypoint.sh apach ...   Up      0.0.0.0:8000->80/tcp
+$ sudo docker-compose logs
+
+•	Try to access to wordpress http://192.168.56.101:8000
+ 
+
+•	Inspect Wordpress resources created by Docker Compose
+
+$ sudo docker network ls
+NETWORK ID          NAME                   DRIVER              SCOPE
+4569657bc768        bridge                 bridge              local
+5d9c8ffca6c7        host                   host                local
+830b8763de3f        my-network             bridge              local
+f09df3733ab5        my_wordpress_default   bridge              local
+a72879840d85        none                   null                local
+$ sudo docker volume ls
+DRIVER              VOLUME NAME
+local               7ce78bc3d6db25faa744c404efb0254450b13393b9335343d63de67fafab5e76
+local               63852d7a582f64af7f9ac090cc9a9ceb0ccdfb43b2f1b2150a309eb3caaf219a
+local               b7396f380e55ff040655b730a0f80ea934134b076f33e5e146a657c099eb12e5
+local               my-vol
+local               my_wordpress_dbdata
+$ sudo docker-compose stop
+Stopping my_wordpress_wordpress_1_123d43c60f51 ... done
+Stopping my_wordpress_db_1_2eddb6d561c0        ... done
+
+2.3.	Create NodeJS Mongodb Microservices Application
+
+In this tutorial, we will see how to setup a NodeJS/Express and MongoDB in Docker from scratch using Docker Compose. The application, Dockerfile and docker-compose description file are available on GitHub: 
+ 
+
+•	Download code source form GitHub and build the image
+
+$ git clone https://github.com/walidsaad/training-app-backend.git
+$ sudo docker-compose build
+Building app
+Step 1/7 : FROM node:8
+ ---> 82c0936c46c1
+Step 2/7 : WORKDIR /app
+ ---> Using cache
+ ---> 48f585dcd842
+Step 3/7 : COPY package.json /app
+ ---> Using cache
+ ---> 9c5307d41b55
+Step 4/7 : RUN npm install
+ ---> Running in 4792f97dbba4
+
+> uglifyjs-webpack-plugin@0.4.6 postinstall /app/node_modules/uglifyjs-webpack-p                                                                                        lugin
+> node lib/post_install.js
+
+
+> nodemon@1.18.6 postinstall /app/node_modules/nodemon
+> node bin/postinstall || exit 0
+
+Love nodemon? You can now support the project via the open collective:
+ > https://opencollective.com/nodemon/donate
+
+npm notice created a lockfile as package-lock.json. You should commit this file.
+npm WARN training-app@1.0.0 No description
+npm WARN training-app@1.0.0 No repository field.
+npm WARN optional SKIPPING OPTIONAL DEPENDENCY: fsevents@1.2.4 (node_modules/fse                                                                                        vents):
+npm WARN notsup SKIPPING OPTIONAL DEPENDENCY: Unsupported platform for fsevents@                                                                                        1.2.4: wanted {"os":"darwin","arch":"any"} (current: {"os":"linux","arch":"x64"}                                                                                        )
+
+added 584 packages from 358 contributors and audited 10187 packages in 218.667s
+found 0 vulnerabilities
+
+Removing intermediate container 4792f97dbba4
+ ---> 258bbf537445
+Step 5/7 : COPY . /app
+ ---> 332f47d6f22b
+Step 6/7 : CMD node app.js
+ ---> Running in b76d6d50f60c
+Removing intermediate container b76d6d50f60c
+ ---> bfa1d79540a5
+Step 7/7 : EXPOSE 3000
+ ---> Running in fb57f7ad4903
+Removing intermediate container fb57f7ad4903
+ ---> 6565aa0c8f4d
+
+Successfully built 6565aa0c8f4d
+Successfully tagged training-app-backend_app:latest
+
+
+•	Launch Docker Compose Command
+
+$ sudo docker-compose up -d
+Creating network "training-app-backend_my-network" with the default driver
+Creating volume "training-app-backend_mean-data" with default driver
+Pulling mongo (mongo:)... 
+3b37166ec614: Pull complete
+…………………………….
+Creating mongo ... done
+Creating app   ... done
+$ sudo docker-compose ps
+Name              Command             State            Ports
+----------------------------------------------------------------------
+app     /bin/sh -c node app.js        Up      0.0.0.0:3000->3000/tcp
+mongo   docker-entrypoint.sh mongod   Up      0.0.0.0:27017->27017/tcp
+
+•	Try to access to application (nodejs server) http://192.168.56.101:3000/
+ 
+•	Check Logs
+$ sudo docker-compose logs
+Attaching to app, mongo
+app      | Server started at port:3000
+app      | Connected to mongodb server at 27017 port
+mongo    | 2018-11-16T22:41:07.235+0000 I CONTROL  [main] Automatically disabling TLS 1.0, to force-enable TLS 1.0 specify --sslDisabledProtocols 'none'
+mongo    | 2018-11-16T22:41:08.147+0000 I CONTROL  [initandlisten] MongoDB starting : pid=1 port=27017 dbpath=/data/db 64-bit host=99d30f483e4b
+mongo    | 2018-11-16T22:41:08.152+0000 I CONTROL  [initandlisten] db version v4.0.4
+mongo    | 2018-11-16T22:41:08.152+0000 I CONTROL  [initandlisten] git version: f288a3bdf201007f3693c58e140056adf8b04839
+mongo    | 2018-11-16T22:41:08.152+0000 I CONTROL  [initandlisten] OpenSSL version: OpenSSL 1.0.2g  1 Mar 2016
+mongo    | 2018-11-16T22:41:08.153+0000 I CONTROL  [initandlisten] allocator: tcmalloc
+mongo    | 2018-11-16T22:41:08.153+0000 I CONTROL  [initandlisten] modules: none
+mongo    | 2018-11-16T22:41:08.153+0000 I CONTROL  [initandlisten] build environment:
+mongo    | 2018-11-16T22:41:08.153+0000 I CONTROL  [initandlisten]     distmod: ubuntu1604
+mongo    | 2018-11-16T22:41:08.153+0000 I CONTROL  [initandlisten]     distarch: x86_64
+mongo    | 2018-11-16T22:41:08.153+0000 I CONTROL  [initandlisten]     target_arch: x86_64
+mongo    | 2018-11-16T22:41:08.153+0000 I CONTROL  [initandlisten] options: { net: { bindIpAll: true } }
+mongo    | 2018-11-16T22:41:08.236+0000 I STORAGE  [initandlisten]
+mongo    | 2018-11-16T22:41:08.239+0000 I STORAGE  [initandlisten] ** WARNING: Using the XFS filesystem is strongly recommended with the WiredTiger storage engine
+mongo    | 2018-11-16T22:41:08.239+0000 I STORAGE  [initandlisten] **          See http://dochub.mongodb.org/core/prodnotes-filesystem
+mongo    | 2018-11-16T22:41:08.240+0000 I STORAGE  [initandlisten] wiredtiger_open config: create,cache_size=256M,session_max=20000,eviction=(threads_min=4,threads_max=4),config_base=false,statistics=(fast),log=(enabled=true,archive=true,path=journal,compressor=snappy),file_manager=(close_idle_time=100000),statistics_log=(wait=0),verbose=(recovery_progress),
+mongo    | 2018-11-16T22:41:14.527+0000 I STORAGE  [initandlisten] WiredTiger message [1542408074:527394][1:0x7ff7aee53a40], txn-recover: Set global recovery timestamp: 0
+mongo    | 2018-11-16T22:41:14.704+0000 I RECOVERY [initandlisten] WiredTiger recoveryTimestamp. Ts: Timestamp(0, 0)
+mongo    | 2018-11-16T22:41:14.936+0000 I CONTROL  [initandlisten]
+mongo    | 2018-11-16T22:41:14.944+0000 I CONTROL  [initandlisten] ** WARNING: Access control is not enabled for the database.
+mongo    | 2018-11-16T22:41:14.944+0000 I CONTROL  [initandlisten] **          Read and write access to data and configuration is unrestricted.
+mongo    | 2018-11-16T22:41:14.944+0000 I CONTROL  [initandlisten]
+mongo    | 2018-11-16T22:41:14.945+0000 I CONTROL  [initandlisten]
+mongo    | 2018-11-16T22:41:14.945+0000 I CONTROL  [initandlisten] ** WARNING: /sys/kernel/mm/transparent_hugepage/enabled is 'always'.
+mongo    | 2018-11-16T22:41:14.945+0000 I CONTROL  [initandlisten] **        We suggest setting it to 'never'
+mongo    | 2018-11-16T22:41:14.945+0000 I CONTROL  [initandlisten]
+mongo    | 2018-11-16T22:41:15.241+0000 I STORAGE  [initandlisten] createCollection: admin.system.version with provided UUID: 531a0621-8c21-4943-ac68-0a894609ccae
+mongo    | 2018-11-16T22:41:15.444+0000 I COMMAND  [initandlisten] setting featureCompatibilityVersion to 4.0
+mongo    | 2018-11-16T22:41:15.599+0000 I STORAGE  [initandlisten] createCollection: local.startup_log with generated UUID: a3932910-ffff-4545-86fb-a8b4c31eddac
+mongo    | 2018-11-16T22:41:15.750+0000 I FTDC     [initandlisten] Initializing full-time diagnostic data capture with directory '/data/db/diagnostic.data'
+mongo    | 2018-11-16T22:41:15.892+0000 I NETWORK  [initandlisten] waiting for connections on port 27017
+mongo    | 2018-11-16T22:41:15.972+0000 I STORAGE  [LogicalSessionCacheRefresh] createCollection: config.system.sessions with generated UUID: c738edc4-6d7c-4105-8d78-31834432717f
+mongo    | 2018-11-16T22:41:16.560+0000 I NETWORK  [listener] connection accepted from 172.20.0.3:40442 #1 (1 connection now open)
+mongo    | 2018-11-16T22:41:16.583+0000 I INDEX    [LogicalSessionCacheRefresh] build index on: config.system.sessions properties: { v: 2, key: { lastUse: 1 }, name: "lsidTTLIndex", ns: "config.system.sessions", expireAfterSeconds: 1800 }
+mongo    | 2018-11-16T22:41:16.591+0000 I INDEX    [LogicalSessionCacheRefresh]          building index using bulk method; build may temporarily use up to 500 megabytes of RAM
+mongo    | 2018-11-16T22:41:16.655+0000 I INDEX    [LogicalSessionCacheRefresh] build index done.  scanned 0 total records. 0 secs
+mongo    | 2018-11-16T22:41:16.683+0000 I COMMAND  [LogicalSessionCacheRefresh] command config.$cmd command: createIndexes { createIndexes: "system.sessions", indexes: [ { key: { lastUse: 1 }, name: "lsidTTLIndex", expireAfterSeconds: 1800 } ], $db: "config" } numYields:0 reslen:114 locks:{ Global: { acquireCount: { r: 2, w: 2 } }, Database: { acquireCount: { w: 2, W: 1 } }, Collection: { acquireCount: { w: 2 } } } protocol:op_msg 764ms
+mongo    | 2018-11-16T22:41:16.866+0000 I NETWORK  [conn1] received client metadata from 172.20.0.3:40442 conn1: { driver: { name: "nodejs", version: "2.2.34" }, os: { type: "Linux", name: "linux", architecture: "x64", version: "4.8.0-46-generic" }, platform: "Node.js v8.12.0, LE, mongodb-core: 2.1.18" }
+
+
+•	Check Docker Compose Volume
+
+$ sudo docker volume ls
+DRIVER              VOLUME NAME
+local               my-vol
+local               training-app-backend_mean-data
+
+$ sudo docker volume inspect training-app-backend_mean-data
+[
+    {
+        "CreatedAt": "2018-11-16T23:43:15+01:00",
+        "Driver": "local",
+        "Labels": {
+            "com.docker.compose.project": "training-app-backend",
+            "com.docker.compose.version": "1.23.1",
+            "com.docker.compose.volume": "mean-data"
+        },
+        "Mountpoint": "/var/lib/docker/volumes/training-app-backend_mean-data/_data",
+        "Name": "training-app-backend_mean-data",
+        "Options": null,
+        "Scope": "local"
+    }
+]
+cloud@cloud-lab:~/training-app-backend$ sudo ls /var/lib/docker/volumes/training-app-backend_mean-data/_data
+app.js                               docker-compose.yaml             index-6-1823971274999627408.wt  package.json       WiredTiger
+collection-0-1823971274999627408.wt  Dockerfile                      journal                         package-lock.json  WiredTigerLAS.wt
+collection-2-1823971274999627408.wt  index-1-1823971274999627408.wt  _mdb_catalog.wt                 README.md          WiredTiger.lock
+collection-4-1823971274999627408.wt  index-3-1823971274999627408.wt  mongod.lock                     sizeStorer.wt      WiredTiger.turtle
+diagnostic.data                      index-5-1823971274999627408.wt  node_modules                    storage.bson       WiredTiger.wt
+
+•	Check Docker Compose Network
+
+$ sudo docker network ls
+NETWORK ID          NAME                              DRIVER              SCOPE
+806e6b263b3f        bridge                            bridge              local
+5d9c8ffca6c7        host                              host                local
+830b8763de3f        my-network                        bridge              local
+406f13533fbd        training-app-backend_my-network   bridge              local
+
+$ sudo docker network inspect my-network
+[
+    {
+        "Name": "my-network",
+        "Id": "830b8763de3fe7b9d4463ac5074efce0655b91ba1245295872d2ba729de3e4db",
+        "Created": "2018-11-15T00:22:07.496636522+01:00",
+        "Scope": "local",
+        "Driver": "bridge",
+        "EnableIPv6": false,
+        "IPAM": {
+            "Driver": "default",
+            "Options": {},
+            "Config": [
+                {
+                    "Subnet": "172.18.0.0/16",
+                    "Gateway": "172.18.0.1"
+                }
+            ]
+        },
+        "Internal": false,
+        "Attachable": false,
+        "Ingress": false,
+        "ConfigFrom": {
+            "Network": ""
+        },
+        "ConfigOnly": false,
+        "Containers": {
+            "2a4677d486069df3db894ee96b734ceccb16263e848a736dca7fe56a717457bc": {
+                "Name": "app",
+                "EndpointID": "54de642e0b59470921b8a54bca473c9cf82abb75ac991ee1d8313fb7c41a4376",
+                "MacAddress": "02:42:ac:12:00:03",
+                "IPv4Address": "172.18.0.3/16",
+                "IPv6Address": ""
+            },
+            "ae46f0db65261a26679a588db99efba79e46cf797d6c210af894cd986c8ae2e6": {
+                "Name": "mongo",
+                "EndpointID": "d030afaf4cd8c520ae7e0446c2db58695d546ecfeb2d6753e9b60c1948b23174",
+                "MacAddress": "02:42:ac:12:00:02",
+                "IPv4Address": "172.18.0.2/16",
+                "IPv6Address": ""
+            }
+        },
+        "Options": {},
+        "Labels": {}
+    }
+]
+
+
+
+
+**************************************************************************************************
+    Lab 7: Jenkins && Docker 
+**************************************************************************************************
+
+1-Create a new Job Pipeline using this project :
+https://github.com/walidsaad/maven-jenkins-pipeline
+$ cat Jenkinsfile
+node {
+   stage('Git Clone') { 
+      // Get some code from a GitHub repository
+      git 'https://github.com/walidsaad/maven-jenkins-pipeline.git'
+   }
+        
+   stage('Build Docker Maven Image') {
+      // Run the maven docker build
+   echo "Build Docker Maven Image With Sample WebApp"
+   sh "docker build -t=\"mymaven:v2.0\" ./maven/"
+   }
+   stage('Generate Maven Artifact') {
+   echo "Run Docker Container and Generate Artifcat"
+   sh "docker run --rm -d -v /home/stagiaire/.m2:/root/.m2 -w /app/training-webapp/ --name test-maven  mymaven:v2.0 mvn clean install"
+   
+   }
+    stage('Deploy Artifcat') {
+      // Run the tomcat deploy
+   echo "Build Tomcat Image with Artifact"
+   sh "docker build -t=\"mytomcat:v2.0\" ./tomcat/"
+   echo "Run Tomcat Container"
+   sh "docker run --rm -d -v /home/stagiaire/.m2/repository/com/mycompany/app/training-webapp/1.0-SNAPSHOT/:/usr/local/tomcat/webapps/ -p 8888:8080 --name maven-webapp mytomcat:v2.0"
+   }
+
+}
+2-Change Jenkeinfile by Jenkinsfile2
+->Try to add parameters to your pipeline.
+$ cat Jenkeinfile2
+pipeline {
+
+ // Some global default variables
+    environment {
+        MAVEN_IMAGE_NAME = 'mymaven'
+        TOMCAT_IMAGE_NAME = 'mytomcat'
+        TEST_LOCAL_PORT = 8888
+    }
+
+    parameters {
+        string (name: 'GIT_BRANCH',           defaultValue: 'master',  description: 'Git branch to build')
+        string (name: 'DOCKER_REG',       defaultValue: 'docker-registry.my',                   description: 'Docker registry')
+        string (name: 'DOCKER_TAG',       defaultValue: 'v2.0',                                     description: 'Docker tag')
+        string (name: 'DOCKER_USR',       defaultValue: 'admin',                                   description: 'Your docker repository user')
+        string (name: 'DOCKER_PSW',       defaultValue: 'password',                                description: 'Your docker repository password')
+    }
+    
+    
+    agent { node { label 'master' } }
+    stages {
+
+   stage('Git Clone') { 
+   steps {
+      // Get some code from a GitHub repository
+      git 'https://github.com/walidsaad/maven-jenkins-pipeline.git'
+   }
+   }     
+   stage('Build Docker Maven Image') {
+   steps {
+      // Run the maven docker build
+   echo "Build Docker Maven Image With Sample WebApp"
+   sh "docker build -t=\"${MAVEN_IMAGE_NAME}:${DOCKER_TAG}\" ./maven/"
+   }
+   }
+   stage('Generate Maven Artifact') {
+   steps {
+   echo "Run Docker Container and Generate Artifcat"
+   sh "docker run --rm -d -v /home/stagiaire/.m2:/root/.m2 -w /app/training-webapp/ --name test-maven  ${MAVEN_IMAGE_NAME}:${DOCKER_TAG} mvn clean install"
+   }
+   }
+    stage('Deploy Artifcat') {
+    steps {
+      // Run the tomcat deploy
+   echo "Build Tomcat Image with Artifact"
+   sh "docker build -t=\"${TOMCAT_IMAGE_NAME}:${DOCKER_TAG}\" ./tomcat/"
+   echo "Run Tomcat Container"
+   sh "docker run --rm -d -v /home/stagiaire/.m2/repository/com/mycompany/app/training-webapp/1.0-SNAPSHOT/:/usr/local/tomcat/webapps/ -p ${TEST_LOCAL_PORT}:8080 --name maven-webapp ${TOMCAT_IMAGE_NAME}:${DOCKER_TAG}"
+   }
+   }
+}
+}
+
+3-Push Images to Dockerhub
+
+pipeline {
+
+ // Some global default variables
+    environment {
+        MAVEN_IMAGE_NAME = 'mymaven'
+        TOMCAT_IMAGE_NAME = 'mytomcat'
+        TEST_LOCAL_PORT = 8888
+        DOCKERHUB_CREDS = credentials('dockerhub')
+
+    }
+
+    parameters {
+        string (name: 'GIT_BRANCH',           defaultValue: 'master',  description: 'Git branch to build')
+        string (name: 'DOCKER_REG',       defaultValue: 'docker-registry.my',                   description: 'Docker registry')
+        string (name: 'DOCKER_TAG',       defaultValue: 'v2.0',                                     description: 'Docker tag')
+        }
+    
+    
+    agent { node { label 'master' } }
+    stages {
+
+   stage('Git Clone') { 
+   steps {
+      // Get some code from a GitHub repository
+      git 'https://github.com/walidsaad/maven-jenkins-pipeline.git'
+   }
+   }     
+   stage('Build Docker Maven Image') {
+   steps {
+      // Run the maven docker build
+   echo "Build Docker Maven Image With Sample WebApp"
+   sh "docker build -t=\"${MAVEN_IMAGE_NAME}:${DOCKER_TAG}\" ./maven/"
+   }
+   }
+   stage('Generate Maven Artifact') {
+   steps {
+   echo "Run Docker Container and Generate Artifcat"
+   sh "docker run --rm -d -v /home/stagiaire/.m2:/root/.m2 -w /app/training-webapp/ --name test-maven  ${MAVEN_IMAGE_NAME}:${DOCKER_TAG} mvn clean install"
+   }
+   }
+    stage('Deploy Artifcat') {
+    steps {
+      // Run the tomcat deploy
+   echo "Build Tomcat Image with Artifact"
+   sh "docker build -t=\"${TOMCAT_IMAGE_NAME}:${DOCKER_TAG}\" ./tomcat/"
+   echo "Run Tomcat Container"
+   sh "docker run --rm -d -v /home/stagiaire/.m2/repository/com/mycompany/app/training-webapp/1.0-SNAPSHOT/:/usr/local/tomcat/webapps/ -p ${TEST_LOCAL_PORT}:8080 --name maven-webapp ${TOMCAT_IMAGE_NAME}:${DOCKER_TAG}"
+   }
+   }
+stage('Push Images To DockerHUb') {
+    steps {
+   echo "Login to Docker HUB"
+   sh "docker login --username $DOCKERHUB_CREDS_USR --password $DOCKERHUB_CREDS_PSW"
+   echo "Push Maven Image vers DockerHUb"
+   sh "docker tag ${MAVEN_IMAGE_NAME}:${DOCKER_TAG} ${DOCKER_REG}/${MAVEN_IMAGE_NAME}:${DOCKER_TAG}"
+   sh "docker push ${DOCKER_REG}/${MAVEN_IMAGE_NAME}:${DOCKER_TAG}"
+   echo "Push Tomcat Image vers DockerHUb"
+   sh "docker tag ${TOMCAT_IMAGE_NAME}:${DOCKER_TAG} ${DOCKER_REG}/${TOMCAT_IMAGE_NAME}:${DOCKER_TAG}"
+   sh "docker push ${DOCKER_REG}/${TOMCAT_IMAGE_NAME}:${DOCKER_TAG}"
+   }
+   }
+}
+
+}
+**************************************************************************************************
+    Lab 8: Container-based Infrastructure with Docker Machine 
+**************************************************************************************************
+
+Docker Machine is a tool for provisioning and managing your Dockerized hosts (hosts with Docker Engine on them).
+
+
+3.1.	Install Docker Machine tools	
+
+•	Install Docker Machine for Windows
+$ base=https://github.com/docker/machine/releases/download/v0.16.0 && mkdir -p "$HOME/bin" && curl –L $base/docker-machine-Windows-x86_64.exe > "$HOME/bin/docker-machine.exe" && chmod +x "$HOME/bin/docker-machine.exe"
+$ docker-machine.exe --version
+docker-machine.exe version 0.16.0, build 702c267f
+
+
+For more details https://docs.docker.com/machine/install-machine/
+•	Install Docker Machine for Linux
+$ base=https://github.com/docker/machine/releases/download/v0.16.0 && curl –L $base/docker-machine-$(uname -s)-$(uname -m) >/tmp/docker-machine && sudo install /tmp/docker-machine /usr/local/bin/docker-machine
+$ docker-machine --help
+Usage: docker-machine [OPTIONS] COMMAND [arg...]
+
+Create and manage machines running Docker.
+
+Version: 0.12.1, build c8b17e8
+
+Author:
+  Docker Machine Contributors - <https://github.com/docker/machine>
+
+Options:
+  --debug, -D                                           Enable debug mode
+  --storage-path, -s "/home/grid02/.docker/machine"     Configures storage path [$MACHINE_STORAGE_PATH]
+  --tls-ca-cert                                         CA to verify remotes against [$MACHINE_TLS_CA_CERT]
+  --tls-ca-key                                          Private key to generate certificates [$MACHINE_TLS_CA_KEY]
+  --tls-client-cert                                     Client cert to use for TLS [$MACHINE_TLS_CLIENT_CERT]
+  --tls-client-key                                      Private key used in client TLS auth [$MACHINE_TLS_CLIENT_KEY]
+  --github-api-token                                    Token to use for requests to the Github API [$MACHINE_GITHUB_API_TOKEN]
+  --native-ssh                                          Use the native (Go-based) SSH implementation. [$MACHINE_NATIVE_SSH]
+  --bugsnag-api-token                                   BugSnag API token for crash reporting [$MACHINE_BUGSNAG_API_TOKEN]
+  --help, -h                                            show help
+  --version, -v                                         print the version
+
+Commands:
+  active                Print which machine is active
+  config                Print the connection config for machine
+  create                Create a machine
+  env                   Display the commands to set up the environment for the Docker client
+  inspect               Inspect information about a machine
+  ip                    Get the IP address of a machine
+  kill                  Kill a machine
+  ls                    List machines
+  provision             Re-provision existing machines
+  regenerate-certs      Regenerate TLS Certificates for a machine
+  restart               Restart a machine
+  rm                    Remove a machine
+  ssh                   Log into or run a command on a machine with SSH.
+  scp                   Copy files between machines
+  start                 Start a machine
+  status                Get the status of a machine
+  stop                  Stop a machine
+  upgrade               Upgrade a machine to the latest version of Docker
+  url                   Get the URL of a machine
+  version               Show the Docker Machine version or a machine docker version
+  help                  Shows a list of commands or help for one command
+
+Run 'docker-machine COMMAND --help' for more information on a command.
+
+•	Or download the Docker Machine binary directly from:
+
+https://github.com/docker/machine/releases/
+
+3.2.	VirtualBox driver		
+3.2.1.	Linux machine  
+$ docker-machine create -d virtualbox test
+Running pre-create checks...
+(test) No default Boot2Docker ISO found locally, downloading the latest release...
+(test) Latest release for github.com/boot2docker/boot2docker is v18.06.0-ce
+(test) Downloading /home/walid/.docker/machine/cache/boot2docker.iso from https://github.com/boot2docker/boot2docker/releases/download/v18.06.0-ce/boot2docker.iso...
+(test) 0%....10%....20%....30%....40%....50%....60%....70%....80%....90%....100%
+Creating machine...
+(test) Copying /home/walid/.docker/machine/cache/boot2docker.iso to /home/walid/.docker/machine/machines/test/boot2docker.iso...
+(test) Creating VirtualBox VM...
+(test) Creating SSH key...
+(test) Starting the VM...
+(test) Check network to re-create if needed...
+(test) Waiting for an IP...
+Waiting for machine to be running, this may take a few minutes...
+Detecting operating system of created instance...
+Waiting for SSH to be available...
+Detecting the provisioner...
+Provisioning with boot2docker...
+Copying certs to the local machine directory...
+Copying certs to the remote machine...
+Setting Docker configuration on the remote daemon...
+Checking connection to Docker...
+Docker is up and running!
+To see how to connect your Docker Client to the Docker Engine running on this virtual machine, run: docker-machine env test
+
+$ docker-machine ls
+NAME         ACTIVE   DRIVER       STATE     URL                         SWARM   DOCKER        ERRORS
+test         -        virtualbox   Running   tcp://192.168.99.100:2376           v18.06.0-ce   
+
+$ docker-machine ssh test
+                        ##         .
+                  ## ## ##        ==
+               ## ## ## ## ##    ===
+           /"""""""""""""""""\___/ ===
+      ~~~ {~~ ~~~~ ~~~ ~~~~ ~~~ ~ /  ===- ~~~
+           \______ o           __/
+             \    \         __/
+              \____\_______/
+ _                 _   ____     _            _
+| |__   ___   ___ | |_|___ \ __| | ___   ___| | _____ _ __
+| '_ \ / _ \ / _ \| __| __) / _` |/ _ \ / __| |/ / _ \ '__|
+| |_) | (_) | (_) | |_ / __/ (_| | (_) | (__|   <  __/ |
+|_.__/ \___/ \___/ \__|_____\__,_|\___/ \___|_|\_\___|_|
+Boot2Docker version 18.06.0-ce, build HEAD : 1f40eb2 - Thu Jul 19 18:48:09 UTC 2018
+Docker version 18.06.0-ce, build 0ffa825
+
+docker@test:~$ docker run -it ubuntu
+Unable to find image 'ubuntu:latest' locally
+latest: Pulling from library/ubuntu
+c64513b74145: Pull complete 
+01b8b12bad90: Pull complete 
+c5d85cf7a05f: Pull complete 
+b6b268720157: Pull complete 
+e12192999ff1: Pull complete 
+Digest: sha256:3f119dc0737f57f704ebecac8a6d8477b0f6ca1ca0332c7ee1395ed2c6a82be7
+Status: Downloaded newer image for ubuntu:latest
+root@6ac380f5489a:/# ls    
+bin  boot  dev  etc  home  lib  lib64  media  mnt  opt  proc  root  run  sbin  srv  sys  tmp  usr  var
+root@6ac380f5489a:/#
+
+docker@test:~$ docker run -dt --name c1 ubuntu
+6323ce947b711628c341d182b57c7dd5ec6b27dc3b20863ef10b6d5f9e1b6af9
+docker@test:~$ docker ps
+CONTAINER ID        IMAGE               COMMAND             CREATED             STATUS              PORTS               NAMES
+6323ce947b71        ubuntu              "/bin/bash"         4 seconds ago       Up 3 seconds                            c1
+
+docker@test:~$exit
+
+$ eval $(docker-machine env test)
+$ docker ps
+CONTAINER ID        IMAGE                   COMMAND                  CREATED             STATUS              PORTS                            NAMES
+9643ef87cf33        phpmyadmin/phpmyadmin   "/run.sh superviso..."   17 hours ago        Up 17 hours         9000/tcp, 0.0.0.0:8081->80/tcp   php_admin
+7c09b624bfca        wordpress:latest        "docker-entrypoint..."   18 hours ago        Up 18 hours         0.0.0.0:8080->80/tcp             my_admin
+94faa4337cfe        mysql:5.7               "docker-entrypoint..."   18 hours ago        Up 18 hours         3306/tcp                         my_mysql
+$ docker stop $(docker ps -a -q)
+9643ef87cf33
+7c09b624bfca
+94faa4337cfe
+$ docker ps
+CONTAINER ID        IMAGE               COMMAND             CREATED             STATUS              PORTS               NAMES
+$ docker-machine stop test
+Stopping "test"...
+Machine "test" was stopped.
+
+3.2.2.	Windows machine  
+
+•	Using Git Bash
+$ docker-machine.exe create -d virtualbox test
+$ docker-machine.exe ls
+NAME         ACTIVE   DRIVER       STATE     URL                         SWARM   DOCKER        ERRORS
+test         -        virtualbox   Running   tcp://192.168.99.100:2376           v18.06.0-ce 
+$ docker-machine.exe ssh test
+docker@test:~$ docker run -dt --name c1 ubuntu
+6323ce947b711628c341d182b57c7dd5ec6b27dc3b20863ef10b6d5f9e1b6af9
+docker@test:~$exit
+$ eval $(docker-machine.exe env test)
+$ docker ps
+
+**************************************************************************************************
+		Lab9 Docker Swarm
+**************************************************************************************************
+
+
+1.Create Docker Host Master Node
+
+$ docker-machine create -d virtualbox --virtualbox-memory 2048 master1
+Running pre-create checks... 
+(master1) No default Boot2Docker ISO found locally, downloading the latest release...
+(master1) Latest release for github.com/boot2docker/boot2docker is v18.09.0
+(master1) Downloading /home/grid01/.docker/machine/cache/boot2docker.iso from https://github.com/boot2docker/boot2docker/releases/download/v18.09.0/boot2docker.iso...
+^[[A^[[A(master1) 0%....10%....20%....30%....40%....50%....60%....70%....80%....90%....100%
+Creating machine...
+(master1) Unable to get the local Boot2Docker ISO version:  Did not find prefix "-v" in version string
+(master1) Default Boot2Docker ISO is out-of-date, downloading the latest release...
+(master1) Latest release for github.com/boot2docker/boot2docker is v18.09.0
+(master1) Downloading /home/grid01/.docker/machine/cache/boot2docker.iso from https://github.com/boot2docker/boot2docker/releases/download/v18.09.0/boot2docker.iso...
+^[[A(master1) 0%....10%....20%....30%....40%....50%....60%....70%....80%....90%....100%
+(master1) Copying /home/grid01/.docker/machine/cache/boot2docker.iso to /home/grid01/.docker/machine/machines/master1/boot2docker.iso...
+(master1) Creating VirtualBox VM...
+(master1) Creating SSH key...
+(master1) Starting the VM...
+(master1) Check network to re-create if needed...
+(master1) Waiting for an IP...
+Waiting for machine to be running, this may take a few minutes...
+Detecting operating system of created instance...
+Waiting for SSH to be available...
+Detecting the provisioner...
+Provisioning with boot2docker...
+Copying certs to the local machine directory...
+Copying certs to the remote machine...
+Setting Docker configuration on the remote daemon...
+Checking connection to Docker...
+Docker is up and running!
+To see how to connect your Docker Client to the Docker Engine running on this virtual machine, run: docker-machine env master1
+
+2-Create Docker Host Worker Nodes
+
+$ docker-machine create -d virtualbox --virtualbox-memory 2048 node1
+Running pre-create checks...
+(node1) Unable to get the local Boot2Docker ISO version:  Did not find prefix "-v" in version string
+(node1) Default Boot2Docker ISO is out-of-date, downloading the latest release...
+(node1) Latest release for github.com/boot2docker/boot2docker is v18.09.0
+(node1) Downloading /home/grid01/.docker/machine/cache/boot2docker.iso from https://github.com/boot2docker/boot2docker/releases/download/v18.09.0/boot2docker.iso...
+(node1) 0%....10%....20%....30%....40%....50%....60%....70%....80%....90%....100%
+Creating machine...
+(node1) Unable to get the local Boot2Docker ISO version:  Did not find prefix "-v" in version string
+(node1) Default Boot2Docker ISO is out-of-date, downloading the latest release...
+(node1) Latest release for github.com/boot2docker/boot2docker is v18.09.0
+(node1) Downloading /home/grid01/.docker/machine/cache/boot2docker.iso from https://github.com/boot2docker/boot2docker/releases/download/v18.09.0/boot2docker.iso...
+(node1) 0%....10%....20%....30%....40%....50%....60%....70%....80%....90%....100%
+(node1) Copying /home/grid01/.docker/machine/cache/boot2docker.iso to /home/grid01/.docker/machine/machines/node1/boot2docker.iso...
+(node1) Creating VirtualBox VM...
+(node1) Creating SSH key...
+(node1) Starting the VM...
+(node1) Check network to re-create if needed...
+(node1) Waiting for an IP...
+Waiting for machine to be running, this may take a few minutes...
+Detecting operating system of created instance...
+Waiting for SSH to be available...
+Detecting the provisioner...
+Provisioning with boot2docker...
+Copying certs to the local machine directory...
+Copying certs to the remote machine...
+Setting Docker configuration on the remote daemon...
+Checking connection to Docker...
+Docker is up and running!
+To see how to connect your Docker Client to the Docker Engine running on this virtual machine, run: docker-machine env node1
+
+$ docker-machine create -d virtualbox --virtualbox-memory 2048 node2
+Running pre-create checks...
+(node2) Unable to get the local Boot2Docker ISO version:  Did not find prefix "-v" in version string
+(node2) Default Boot2Docker ISO is out-of-date, downloading the latest release...
+(node2) Latest release for github.com/boot2docker/boot2docker is v18.09.0
+(node2) Downloading /home/grid01/.docker/machine/cache/boot2docker.iso from https://github.com/boot2docker/boot2docker/releases/download/v18.09.0/boot2docker.iso...
+(node2) 0%....10%....20%....30%....40%....50%....60%....70%....80%....90%....100%
+Creating machine...
+(node2) Unable to get the local Boot2Docker ISO version:  Did not find prefix "-v" in version string
+(node2) Default Boot2Docker ISO is out-of-date, downloading the latest release...
+(node2) Latest release for github.com/boot2docker/boot2docker is v18.09.0
+(node2) Downloading /home/grid01/.docker/machine/cache/boot2docker.iso from https://github.com/boot2docker/boot2docker/releases/download/v18.09.0/boot2docker.iso...
+(node2) 0%....10%....20%....30%....40%....50%....60%....70%....80%....90%....100%
+(node2) Copying /home/grid01/.docker/machine/cache/boot2docker.iso to /home/grid01/.docker/machine/machines/node2/boot2docker.iso...
+(node2) Creating VirtualBox VM...
+(node2) Creating SSH key...
+(node2) Starting the VM...
+(node2) Check network to re-create if needed...
+(node2) Waiting for an IP...
+Waiting for machine to be running, this may take a few minutes...
+Detecting operating system of created instance...
+Waiting for SSH to be available...
+Detecting the provisioner...
+Provisioning with boot2docker...
+Copying certs to the local machine directory...
+Copying certs to the remote machine...
+Setting Docker configuration on the remote daemon...
+Checking connection to Docker...
+Docker is up and running!
+To see how to connect your Docker Client to the Docker Engine running on this virtual machine, run: docker-machine env node2
+
+Node: dockermachine.exe create -d virtualbox --virtualbox-boot2docker-url file://C:/Users/Administrateur/.docker/machine/cache/boot2docker.iso node2
+
+$ docker-machine ls
+NAME          ACTIVE   DRIVER       STATE     URL                         SWARM   DOCKER     ERRORS
+master1       -        virtualbox   Running   tcp://192.168.99.100:2376           v18.09.0
+node1         -        virtualbox   Running   tcp://192.168.99.102:2376           v18.09.0
+node2         -        virtualbox   Running   tcp://192.168.99.103:2376           v18.09.0
+
+
+2-Join Worker Nodes To Master
+
+2.1 Init the Master Node
+
+$ docker-machine ssh master1 docker swarm init --advertise-addr 192.168.99.100
+Swarm initialized: current node (ytg5mn3t1lksb4kxg705y9kli) is now a manager.
+
+To add a worker to this swarm, run the following command:
+
+    docker swarm join --token SWMTKN-1-6cu1djkg8159aey7cjhwbobc40nr62x7bd3rurbqcuky31b6iv-64p1ezfjxkv7gal46lx74iajt 192.168.99.100:2377
+
+To add a manager to this swarm, run 'docker swarm join-token manager' and follow the instructions.
+
+2.1 Add Worker Node1
+$ docker-machine ssh node1 docker swarm join --token SWMTKN-1-6cu1djkg8159aey7cjhwbobc40nr62x7bd3rurbqcuky31b6iv-64p1ezfjxkv7gal46lx74iajt 192.168.99.100:2377
+This node joined a swarm as a worker.
+
+2.2 Add Worker Node2
+
+$ docker-machine ssh node2 docker swarm join --token SWMTKN-1-6cu1djkg8159aey7cjhwbobc40nr62x7bd3rurbqcuky31b6iv-64p1ezfjxkv7gal46lx74iajt 192.168.99.100:2377
+This node joined a swarm as a worker.
+
+2.3 Check the cluster
+
+$ docker-machine ssh master1 docker node ls
+ID                            HOSTNAME            STATUS              AVAILABILITY        MANAGER STATUS      ENGINE VERSION
+ytg5mn3t1lksb4kxg705y9kli *   master1             Ready               Active              Leader              18.09.0
+s70dbemvzs3etaju83jytgu1b     node1               Ready               Active                                  18.09.0
+4wto1c0ov7qrz9jrufnipom6q     node2               Ready               Active                                  18.09.0
+
+$ docker-machine ssh master1 docker info
+Containers: 0
+ Running: 0
+ Paused: 0
+ Stopped: 0
+Images: 0
+Server Version: 18.09.0
+Storage Driver: overlay2
+ Backing Filesystem: extfs
+ Supports d_type: true
+ Native Overlay Diff: true
+Logging Driver: json-file
+Cgroup Driver: cgroupfs
+Plugins:
+ Volume: local
+ Network: bridge host macvlan null overlay
+ Log: awslogs fluentd gcplogs gelf journald json-file local logentries splunk syslog
+Swarm: active
+ NodeID: ytg5mn3t1lksb4kxg705y9kli
+ Is Manager: true
+ ClusterID: rmyjq5s7db7c4tgnzyf1y9rww
+ Managers: 1
+ Nodes: 3
+ Default Address Pool: 10.0.0.0/8
+ SubnetSize: 24
+ Orchestration:
+  Task History Retention Limit: 5
+ Raft:
+  Snapshot Interval: 10000
+  Number of Old Snapshots to Retain: 0
+  Heartbeat Tick: 1
+  Election Tick: 10
+ Dispatcher:
+  Heartbeat Period: 5 seconds
+ CA Configuration:
+  Expiry Duration: 3 months
+  Force Rotate: 0
+ Autolock Managers: false
+ Root Rotation In Progress: false
+ Node Address: 192.168.99.100
+ Manager Addresses:
+  192.168.99.100:2377
+Runtimes: runc
+Default Runtime: runc
+Init Binary: docker-init
+containerd version: 468a545b9edcd5932818eb9de8e72413e616e86e
+runc version: 69663f0bd4b60df09991c08812a60108003fa340
+init version: fec3683
+Security Options:
+ seccomp
+  Profile: default
+Kernel Version: 4.14.79-boot2docker
+Operating System: Boot2Docker 18.09.0 (TCL 8.2.1)
+OSType: linux
+Architecture: x86_64
+CPUs: 1
+Total Memory: 989.4MiB
+Name: master1
+ID: 3BMX:ZDAL:7ATR:SX2S:S3GZ:GXTL:KKT6:2JAO:R5OS:PDML:RUEZ:BBFG
+Docker Root Dir: /mnt/sda1/var/lib/docker
+Debug Mode (client): false
+Debug Mode (server): false
+Registry: https://index.docker.io/v1/
+Labels:
+ provider=virtualbox
+Experimental: false
+Insecure Registries:
+ 127.0.0.0/8
+Live Restore Enabled: false
+Product License: Community Engine
+
+3-Enjoy by creating services
+
+3.1-Create nginx service
+
+$ docker-machine ssh master1
+   ( '>')
+  /) TC (\   Core is distributed with ABSOLUTELY NO WARRANTY.
+ (/-_--_-\)           www.tinycorelinux.net
+
+docker@master1:~$ docker service create --name web-server --replicas 1 --publish 8001:80 nginx
+ltn64tp7htsbs3yoczmoisv3y
+overall progress: 1 out of 1 tasks
+1/1: running   [==================================================>]
+verify: Service converged
+docker@master1:~$ docker service ls
+ID                  NAME                MODE                REPLICAS            IMAGE               PORTS
+ltn64tp7htsb        web-server          replicated          1/1                 nginx:latest        *:8001->80/tcp
+
+docker@master1:~$ docker service ps web-server
+ID                  NAME                IMAGE               NODE                DESIRED STATE       CURRENT STATE            ERROR               PORTS
+l72y6mr3kpe4        web-server.1        nginx:latest        node2               Running             Running 52 seconds ago
+
+3.2-Try to scale the service in the swarm using  : docker service scale <SERVICE-ID>=<NUMBER-OF-TASKS>
+
+docker@master1:~$ docker service scale web-server=5
+web-server scaled to 5
+overall progress: 5 out of 5 tasks
+1/5: running   [==================================================>]
+2/5: running   [==================================================>]
+3/5: running   [==================================================>]
+4/5: running   [==================================================>]
+5/5: running   [==================================================>]
+verify: Service converged
+docker@master1:~$ docker service ps web-server
+ID                  NAME                IMAGE               NODE                DESIRED STATE       CURRENT STATE            ERROR               PORTS
+l72y6mr3kpe4        web-server.1        nginx:latest        node2               Running             Running 2 minutes ago
+90nbhj0gwhor        web-server.2        nginx:latest        node1               Running             Running 10 seconds ago
+gsvsbpcr3zrm        web-server.3        nginx:latest        master1             Running             Running 9 seconds ago
+a3xbxfu75vwi        web-server.4        nginx:latest        master1             Running             Running 9 seconds ago
+kly3jp0qo9c2        web-server.5        nginx:latest        node2               Running             Running 28 seconds ago
+docker@master1:~$
+
+docker@master1:~$ docker ps
+CONTAINER ID        IMAGE               COMMAND                  CREATED             STATUS              PORTS               NAMES
+0bd66322fdb3        nginx:latest        "nginx -g 'daemon of…"   7 minutes ago       Up 7 minutes        80/tcp              web-server.3.gsvsbpcr3zrmj498nwrz4za5p
+4d9da991f035        nginx:latest        "nginx -g 'daemon of…"   7 minutes ago       Up 7 minutes        80/tcp              web-server.4.a3xbxfu75vwisr9xqrqk521aw
+
+docker@master1:~$ docker service inspect web-server
+docker@master1:~$ docker service rm web-server
+
+
+
+4-Create nginx server
+$ docker service create --name my-webserver --publish published=8080,target=80 --replicas 2 nginx
+
+5-Create stack from CLI
+5.1: Nginx+Visualizer
+$mkdir stack
+$ cd stack
+$ cat docker-compose.yml
+version: "3"
+services:
+  # Service Name Defined as web
+  web:
+    # Pull the Image from Repository.
+    # replace username/repo:tag with your name and image details
+    image: nginx
+    # Command used to deploy the Service
+    deploy:
+      # Run 5 instances of that image as a service called web
+      replicas: 5
+      resources:
+        # Limiting each one to use, at most, 10% of a single core of CPU time and 50MB of RAM.
+        limits:
+          cpus: "0.1"
+          memory: 50M
+      # Immediately restart containers if one fails.
+      restart_policy:
+        condition: on-failure
+    # Map port 8002 on the host to web’s port 80.
+    ports:
+      - "8002:80"
+    # Define default network
+    networks:
+      - webnet
+  visualizer:
+    image: dockersamples/visualizer:stable
+    ports:
+      - "8082:8080"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    deploy:
+      placement:
+        constraints: [node.role == manager]
+    networks:
+      - webnet
+networks:
+  webnet:
+  
+  $ docker stack deploy -c docker-compose.yml my-stack
+  $ docker stack ls
+NAME                SERVICES            ORCHESTRATOR
+my-stack            2                   Swarm
+
+-->http://masterIP:8082
+-->http://masterIP:8002
+$ docker stack services my-stack
+ID                  NAME                  MODE                REPLICAS            IMAGE                             PORTS
+x5i9iwfvjpjp        my-stack_visualizer   replicated          1/1                 dockersamples/visualizer:stable   *:8082->8080/tcp
+xxtk88hdnzxp        my-stack_web          replicated          5/5                 nginx:latest                      *:8002->80/tcp
+$ docker network ls
+NETWORK ID          NAME                DRIVER              SCOPE
+e78410a79aae        bridge              bridge              local
+b8b520b7d776        docker_gwbridge     bridge              local
+e2ad9410fd8f        host                host                local
+qfk7l1ocabtm        ingress             overlay             swarm
+6djo0ksl8bxg        my-stack_webnet     overlay             swarm
+3de73f5f2d7a        none                null                local
+$ docker service ps my-stack_web
+ID                  NAME                IMAGE               NODE                DESIRED STATE       CURRENT STATE            ERROR               PORTS
+3k98yxi9rs91        my-stack_web.1      nginx:latest        master1             Running             Running 49 minutes ago
+99tz82m4pt7t        my-stack_web.2      nginx:latest        node1               Running             Running 49 minutes ago
+1yup2n5w817l        my-stack_web.3      nginx:latest        node1               Running             Running 49 minutes ago
+53db4m5ilv1d        my-stack_web.4      nginx:latest        node3               Running             Running 49 minutes ago
+n11ghl4w5lwa        my-stack_web.5      nginx:latest        node2               Running             Running 49 minutes ago
+
+5.2-Jenkins
+$ cat docker-compose-jenkins.yml
+version: "3"
+services:
+  # Service Name Defined as web
+  web:
+    # Pull the Image from Repository.
+    # replace username/repo:tag with your name and image details
+    image: jenkins/jenkins
+    # Command used to deploy the Service
+    deploy:
+      # Run 5 instances of that image as a service called web
+      replicas: 1
+      # Immediately restart containers if one fails.
+      restart_policy:
+        condition: on-failure
+    # Map port 8002 on the host to web’s port 80.
+    ports:
+      - "8008:8080"
+      
+     $ docker stack deploy -c docker-compose-jenkins.yml my-jenkins
+
+**************************************************************************************************
+		Lab9 Portainer UI
+**************************************************************************************************
+
+
+1-Add Portainer UI to best manager Swarm (https://portainer.io/install.html)
+
+$docker master1 ssh
+docker@master1:~$ docker volume create portainer_data
+portainer_data
+docker@master1:~$ docker service create \
+ --name portainer \
+--publish 9000:9000 \
+--replicas=1 \
+--constraint 'node.role == manager' \
+--mount type=bind,src=//var/run/docker.sock,dst=/var/run/docker.sock \
+--mount type=volume,src=portainer_data,dst=/data \
+portainer/portainer \
+-H unix:///var/run/docker.sock
+8hx7t1tbj0ekniwt83s4jrith
+overall progress: 1 out of 1 tasks
+1/1: running   [==================================================>]
+verify: Service converged
+docker@master1:~$ docker service ps portainer
+ID                  NAME                IMAGE                        NODE                DESIRED STATE       CURRENT STATE            ERROR               PORTS
+jcx4u6t5xxcl        portainer.1         portainer/portainer:latest   master1             Running             Running 22 seconds ago
+
+
+2-Create Service / Network / Volume
+3-Create Wordpress stack from Portainer UI
