@@ -6,7 +6,7 @@ $ cd tools
 $ sudo yum search java-11
 $ sudo yum install  ava-11-openjdk.x86_64 java-11-openjdk-devel.x86_64
 $ export JAVA_HOME=/usr/lib/jvm/java-11-openjdk
-$ export PATH=$PATH:$JAVA_HOME
+$ export PATH=$PATH:$JAVA_HOME/bin
 $ wget http://mirrors.jenkins.io/war-stable/latest/jenkins.war
 $ wget https://downloads.apache.org/maven/maven-3/3.6.3/binaries/apache-maven-3.6.3-bin.zip
 $ wget https://downloads.apache.org/tomcat/tomcat-9/v9.0.36/bin/apache-tomcat-9.0.36-windows-x64.zip
