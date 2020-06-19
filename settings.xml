@@ -76,6 +76,7 @@ under the License.
    | "org.apache.maven.plugins" and "org.codehaus.mojo" if these are not already contained in the list.
    |-->
   <pluginGroups>
+  <pluginGroup>org.sonarsource.scanner.maven</pluginGroup>
     <!-- pluginGroup
      | Specifies a further group identifier to use for plugin lookup.
     <pluginGroup>com.your.plugins</pluginGroup>
@@ -112,7 +113,12 @@ under the License.
   <server>
           <id>nexus</id>
           <username>admin</username>
-          <password>Azerty01</password>
+          <password>admin</password>
+        </server>
+        <server>
+          <id>sonar</id>
+          <username>admin</username>
+          <password>admin</password>
         </server>
     <!-- server
      | Specifies the authentication information to use when connecting to a particular server, identified by
@@ -191,6 +197,18 @@ under the License.
    |
    |-->
   <profiles>
+  <profile>
+            <id>sonar</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <properties>
+                <!-- Optional URL to server. Default value is http://localhost:9000 -->
+                <sonar.host.url>
+                  http://localhost:9000
+                </sonar.host.url>
+            </properties>
+        </profile>
   <profile>
       <id>nexus</id>
       <!--Enable snapshots for the built in central repo to direct -->
@@ -280,5 +298,6 @@ under the License.
 <activeProfiles>
     <!--make the profile active all the time -->
     <activeProfile>nexus</activeProfile>
+    <activeProfile>sonar</activeProfile>
   </activeProfiles>
 </settings>
