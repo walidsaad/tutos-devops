@@ -1,0 +1,40 @@
+1-Configuration du Maven avec SonarQube
+-Configuration du Maven
+
+Etape 1: Fichier Sesstings.xml (configurer le serveur Sonar)
+•Dans la section <pluginGroups>, ajouter la configuration suivante :
+<pluginGroups>
+    <pluginGroup>org.sonarsource.scanner.maven</pluginGroup>
+  </pluginGroups>
+•Dans la section <profiles>, ajouter la configuration suivante :
+<profile>
+            <id>sonar</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <properties>
+                <!-- Optional URL to server. Default value is http://localhost:9000 -->
+                <sonar.host.url>
+                  http://localhost:9000
+                </sonar.host.url>
+            </properties>
+        </profile>
+•Dans la section < activeProfiles>, activer le profile Sonar :
+    <activeProfiles>
+   <activeProfile>sonar</activeProfile>
+  </activeProfiles>
+•Dans la section < servers>, ajouter les paramètres d’authentifications au serveur Sonar :
+<server>
+          <id>sonar</id>
+          <username>admin</username>
+          <password>admin</password>
+        </server>
+
+Etape 2 : Fichier pom.xml (ajouter le plugin sonar)
+<plugin>
+        <groupId>org.sonarsource.scanner.maven</groupId>
+        <artifactId>sonar-maven-plugin</artifactId>
+        <version>3.4.0.905</version>
+      </plugin>
+2-Lancer le test de la qualité de code
+•Lancer la commande: mvn clean verify sonar:sonar
