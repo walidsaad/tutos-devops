@@ -1,4 +1,26 @@
-
+--For ubuntu--
+1-Java, Maven, Tomcat and Jenkins
+$ mkdir tools
+$ cd tools
+$ sudo apt-get update
+-Java
+$ sudo apt install openjdk-11-jdk git
+$ java -version
+-Maven
+$ wget https://downloads.apache.org/maven/maven-3/3.6.3/binaries/apache-maven-3.6.3-bin.zip
+$ unzip apache-maven-3.6.3-bin.zip
+$ sudo ln -s /home/stagiaire/tools/apache-maven-3.6.3/bin/mvn /usr/bin/mvn
+$ mvn --version
+$ unzip apache-tomcat-9.0.36-windows-x64.zip
+-Jenkins
+$ wget http://mirrors.jenkins.io/war-stable/latest/jenkins.war
+$ cp /home/stagiaire/tools/jenkins.war /home/stagiaire/tools/apache-tomcat-9.0.36/webapps/
+$ cd apache-tomcat-9.0.36/bin/
+$ chmod a+x startup.sh 
+ $ chmod a+x catalina.sh 
+ $ ./startup.sh 
+ -->http://localhost:8080/jenkins
+ 
 --For centos--
 1-Java, Maven, Tomcat and Jenkins
 $ mkdir tools
