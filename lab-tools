@@ -11,6 +11,7 @@ $ wget https://downloads.apache.org/maven/maven-3/3.6.3/binaries/apache-maven-3.
 $ unzip apache-maven-3.6.3-bin.zip
 $ sudo ln -s /home/stagiaire/tools/apache-maven-3.6.3/bin/mvn /usr/bin/mvn
 $ mvn --version
+$ wget https://downloads.apache.org/tomcat/tomcat-9/v9.0.36/bin/apache-tomcat-9.0.36-windows-x64.zip
 $ unzip apache-tomcat-9.0.36-windows-x64.zip
 -Jenkins
 $ wget http://mirrors.jenkins.io/war-stable/latest/jenkins.war
