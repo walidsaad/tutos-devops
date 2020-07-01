@@ -66,6 +66,12 @@ JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
 ecport JAVA_HOME
 export PATH=$PATH:$JAVA_HOME/bin
 $ source ~/.bashrc
+--If Problem with JDK on Ubuntu
+$ sudo apt install openjdk-8-jdk
+Editer le fichier nexus et modifier la variable d'envt 
+INSTALL4J_JAVA_HOME_OVERRIDE=/usr/lib/jvm/java-8-openjdk-amd64/
+$gedit ./bin/nexus
+
 -------------------------------------------------
 
 Started Sonatype Nexus OSS 3.24.0-02
