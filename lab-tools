@@ -59,6 +59,13 @@ $ mv /home/stagiaire/Téléchargements/nexus-3.24.0-02-unix.tar.gz .
 $ tar -zxvf nexus-3.24.0-02-unix.tar.gz 
 $ cd nexus-3.24.0-02/bin/
 $ ./nexus run
+-JAVA_HOME
+$ gedit ~/.bashrc
+-->Ajouter les lignes suivantes et sauvegarder
+JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
+ecport JAVA_HOME
+export PATH=$PATH:$JAVA_HOME/bin
+$ source ~/.bashrc
 -------------------------------------------------
 
 Started Sonatype Nexus OSS 3.24.0-02
